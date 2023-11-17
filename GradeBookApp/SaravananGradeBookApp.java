@@ -6,16 +6,24 @@
     Java tutorials.,https://www.w3schools.com/java/ */
 
 package GradeBookApp;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.List;
 import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 public class SaravananGradeBookApp extends Application
 {
+    private ObservableList<Student> students = FXCollections.observableArrayList();
     public static void main (String[] args)
     {
         launch(args);
@@ -50,7 +58,7 @@ public class SaravananGradeBookApp extends Application
         Button viewButton = new Button("View Grades");
         Button saveButton = new Button("Save Grades");
 
-        TextArea viewGrade = new TextArea();
+        //TextArea viewGrade = new TextArea();
         
         //Add components to the Grid
         grid.add(firstNameLabel, 0, 0);
@@ -69,18 +77,42 @@ public class SaravananGradeBookApp extends Application
         grid.add(viewButton, 1, 4);
         grid.add(saveButton, 2, 4);
        
-        grid.add(viewGrade, 0, 5, 3, 1);
+        //grid.add(viewGrade, 0, 5, 3, 1);
     
 
         //set Button actions
         clearButton.setOnAction(e -> clearForm(firstNameField, lastNameField, courseField, gradeComboBox));
-        viewButton.setOnAction(e -> viewGrades(viewGrade));
+        viewButton.setOnAction(e -> viewGrades());
         saveButton.setOnAction(e-> savegrade(firstNameField, lastNameField, courseField, gradeComboBox));
        
         //create a scene
-        Scene scene = new Scene(grid, 400,300);
-        primaryStage.setScene(scene);
+        //Scene scene = new Scene(grid, 400,300);
+        //primaryStage.setScene(scene);
         StackPane.setAlignment(viewButton, javafx.geometry.Pos.CENTER);
+
+             // TableView setup
+        
+        TableView<Student> tableView = new TableView<>();
+        TableColumn<Student, String> firstNameCol = new TableColumn<>("First Name");
+        firstNameCol.setCellValueFactory(new PropertyValueFactory<>("firstName"));
+
+        TableColumn<Student, String> lastNameCol = new TableColumn<>("Last Name");
+        lastNameCol.setCellValueFactory(new PropertyValueFactory<>("lastName"));
+
+        TableColumn<Student, String> courseCol = new TableColumn<>("Course");
+        courseCol.setCellValueFactory(new PropertyValueFactory<>("course"));
+
+        TableColumn<Student, String> gradeCol = new TableColumn<>("Grade");
+        gradeCol.setCellValueFactory(new PropertyValueFactory<>("grade"));
+
+        tableView.getColumns().addAll(firstNameCol, lastNameCol, courseCol, gradeCol);
+        tableView.setItems(students);
+
+        VBox vBox = new VBox(10);
+        vBox.getChildren().addAll(grid, tableView);
+
+        Scene scene = new Scene(vBox, 500, 400);
+        primaryStage.setScene(scene);
 
         //show the stage
         primaryStage.show();
@@ -94,11 +126,23 @@ public class SaravananGradeBookApp extends Application
         gradeComboBox.getSelectionModel().clearSelection();
     }
     
-    private void viewGrades(TextArea viewGrade)
+    private void viewGrades()
     {
-        List<String> grades = GradeBookHandler.viewGradeEntries();
-        for (String line : grades) {
-            viewGrade.appendText(line + "\n");
+        students.clear(); // Clear previous entries
+
+        try (BufferedReader reader = new BufferedReader(new FileReader("grades.csv"))) {
+            String line;
+            reader.readLine();
+            while ((line = reader.readLine()) != null) 
+            {
+                String[] parts = line.split(",");
+                if (parts.length == 4) {
+                    Student student = new Student(parts[0], parts[1], parts[2], parts[3]);
+                    students.add(student);
+                }
+            }
+        } catch (IOException e) {  
+            e.printStackTrace();
         }
     }
 
